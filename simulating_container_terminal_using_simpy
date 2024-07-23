@@ -1,0 +1,37 @@
+pip install simpy
+
+import simpy
+import random
+
+# Define the ContainerTerminal class
+class ContainerTerminal:
+    def __init__(self, env, num_berths):
+        self.env = env
+        self.berths = simpy.Resource(env, num_berths)
+    
+    def arrive(self, vessel):
+        print(f"{vessel.name} arrived at {self.env.now}")
+        with self.berths.request() as req:
+            yield req
+            print(f"{vessel.name} is being processed at {self.env.now}")
+            yield self.env.timeout(random.uniform(10, 30))  # Processing time
+            print(f"{vessel.name} finished at {self.env.now}")
+
+# Define a vessel generator function
+def vessel_generator(env, terminal):
+    for i in range(5):  # Number of vessels
+        yield env.timeout(random.uniform(5, 10))  # Time between arrivals
+        vessel = Vessel(f"vessel_{i}")
+        env.process(terminal.arrive(vessel))
+
+# Define the Vessel class
+class Vessel:
+    def __init__(self, name):
+        self.name = name
+
+# Set up and run the simulation
+env = simpy.Environment()
+terminal = ContainerTerminal(env, num_berths=2)
+env.process(vessel_generator(env, terminal))
+SIMULATION_TIME = 100
+env.run(until=SIMULATION_TIME)
